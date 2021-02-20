@@ -63,18 +63,6 @@ int main(int argc, char* argv[]) {
 				obfuscationOptions["key"] = input;
 			}
 
-			std::cout << "Read script from input.txt? (y/n)" << std::endl;
-			std::getline(std::cin, input);
-			std::transform(input.begin(), input.end(), input.begin(), tolower);
-
-			if (input == "y")
-				obfuscationOptions["script"] << scriptInput;
-			else {
-				std::cout << "Please enter your script" << std::endl;
-				std::getline(std::cin, input);
-				obfuscationOptions["script"] = input;
-			}
-
 			std::cout << "Save settings?" << std::endl;
 
 			std::getline(std::cin, input);
