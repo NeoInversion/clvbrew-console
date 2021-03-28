@@ -6,6 +6,15 @@
 
 using json = nlohmann::json;
 
+std::string getInput(std::string& var, bool lower) {
+	std::getline(std::cin, var);
+
+	if (lower)
+		std::transform(var.begin(), var.end(), var.begin(), tolower);
+
+	return var; // Useless but minor abstraction
+}
+
 int main(int argc, char* argv[]) {
 	json obfuscationOptions = {
 		{"encAllStrings", false},
@@ -13,77 +22,55 @@ int main(int argc, char* argv[]) {
 		{"noControlFlow", false},
 		{"debugInfo", false},
 		{"noCompressBS", false},
+		{"key", "default_value"}
 	};
 
 	std::string input;
-	std::fstream settings("settings.json", std::fstream::in | std::fstream::out);
+	std::fstream savedKey("key.txt", std::fstream::in | std::fstream::out);
 	std::fstream output("output.txt", std::fstream::out);
 	std::fstream scriptInput("input.txt", std::fstream::in);
 
-	std::cout << "Use saved settings? (y/n)" << std::endl;
 
-	{
-		std::getline(std::cin, input);
-		std::transform(input.begin(), input.end(), input.begin(), tolower);
-		if (input == "y") {
-			json savedSettings = json::parse(settings);
+	for (auto& option : obfuscationOptions.items()) {
+		const std::string idx = option.key();
+		
+		std::cout << idx << " (y/n)" << std::endl;
+		getInput(input, true);
 
-			if (savedSettings["valid"] == true) {
-				for (auto& i : savedSettings.items())
-					obfuscationOptions[i.key()] = i.value();
+		if (input == "y")
+			obfuscationOptions[idx] = true;
+	}
 
-				std::cout << "Please enter your script" << std::endl;
-				std::getline(std::cin, input);
-				obfuscationOptions["script"] = input;
-			}
-			else
-				std::cout << "Settings file was not validated. Resuming manual input" << std::endl;
-		}
-		else {
-			for (auto& i : obfuscationOptions.items()) {
-				std::cout << i.key() << " (y/n)" << std::endl;
-				std::getline(std::cin, input);
-				std::transform(input.begin(), input.end(), input.begin(), tolower);
+	std::cout << "Read key from key.txt? (y/n)" << std::endl;
+	getInput(input, true);
 
-				if (input == "y") {
-					obfuscationOptions[i.key()] = true;
-				}
-			}
+	if (input == "y")
+		// Ugly string construction/iteration mess
+		obfuscationOptions["key"] = std::string((std::istreambuf_iterator<char>(savedKey)), std::istreambuf_iterator<char>());
+	else {
+		std::cout << "Please enter your key" << std::endl;
+		getInput(input, false);
 
-			std::cout << "Read key from settings.json? (y/n)" << std::endl;
+		obfuscationOptions["key"] = input;
+	}
 
-			std::getline(std::cin, input);
-			std::transform(input.begin(), input.end(), input.begin(), tolower);
+	std::cout << "Save key?" << std::endl;
+	getInput(input, true);
 
-			if (input == "y")
-				obfuscationOptions["key"] = json::parse(settings)["key"];
-			else {
-				std::cout << "Please enter your key" << std::endl;
-				std::getline(std::cin, input);
-				obfuscationOptions["key"] = input;
-			}
-
-			std::cout << "Save settings?" << std::endl;
-
-			std::getline(std::cin, input);
-			std::transform(input.begin(), input.end(), input.begin(), tolower);
-			if (input == "y") {
-				obfuscationOptions["valid"] = true;
-				settings.write(obfuscationOptions.dump().c_str(), strlen(obfuscationOptions.dump().c_str()));
-			}
-		}
+	if (input == "y") {
+		const std::string inputKey = std::string(obfuscationOptions["key"]);
+		savedKey.write(inputKey.c_str(), strlen(inputKey.c_str()));
 	}
 
 	cpr::Response response = cpr::Post(
-		cpr::Url { "https://ibidk.herokuapp.com/obfuscate-key" },
-		cpr::Body {obfuscationOptions.dump()},
-		cpr::Header {{"Content-Type", "application/json"}}
+		cpr::Url{ "https://ibidk.herokuapp.com/obfuscate-key" },
+		cpr::Body{ obfuscationOptions.dump() },
+		cpr::Header{ {"Content-Type", "application/json"} }
 	);
-	
+
 	output.write(response.text.c_str(), strlen(response.text.c_str()));
 
-	std::cout << "Obfuscated! Check output.txt" << std::endl;
-
+	std::cout << "Obfuscated, unless it errored. Check output.txt" << std::endl;
 	std::cin.get();
 	return 0;
 }
