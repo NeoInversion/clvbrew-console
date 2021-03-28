@@ -2,7 +2,7 @@
 A console application for obfuscating Lua scripts with clvbrew, a private obfuscator.
 
 ## About
-Yes. ~~The code is abysmal.~~ The code has been improved in a few ways. If you think you can make it better, make a pull request.
+~~Yes, the code is abysmal.~~ The code has been improved in a few ways. If you think you can make it better, make a pull request.
 
 If you stumbled across this by chance, then you probably have no use for it, especially as it requires an API key. If someone referred you to this, then you probably know what it is.
 
